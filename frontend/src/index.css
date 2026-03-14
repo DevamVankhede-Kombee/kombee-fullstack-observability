@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  
+  --color-brand-50: #f5f8ff;
+  --color-brand-100: #ebf1ff;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+}
+
+:root {
+  --bg-main: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --border-subtle: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Refined Utility Classes */
+.card-premium {
+  @apply bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-200;
+}
+
+.card-premium:hover {
+  @apply shadow-md border-slate-300;
+}
+
+.btn-premium {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-all active:scale-[0.98] disabled:opacity-50;
+}
+
+.btn-primary-new {
+  @apply bg-slate-900 text-white hover:bg-slate-800 shadow-sm border border-slate-900;
+}
+
+.input-premium {
+  @apply w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-sm;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+/* Layout helpers */
+.page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}

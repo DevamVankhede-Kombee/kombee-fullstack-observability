@@ -1,0 +1,29 @@
+# WORKFLOW FOR VIDEO RECORDING:
+ 
+# Step 1: Take "BEFORE" Grafana screenshots (normal state)
+# Open App Health dashboard, screenshot showing P95 ~5-10ms
+ 
+# Step 2: Inject Anomaly 1 — Slow Query
+# Edit docker-compose.yml: ANOMALY_SLOW_QUERY: "true"
+docker compose up -d --no-deps app
+ 
+# Step 3: Run load test
+k6 run load-test/k6-script.js
+ 
+# Step 4: Watch Grafana — P95 should spike to ~512ms
+# Take "AFTER" screenshot
+# Go to Tempo — find a slow trace — show 500ms span in ProductService.findAll
+ 
+# Step 5: Fix the anomaly
+# Edit docker-compose.yml: ANOMALY_SLOW_QUERY: "false"
+docker compose up -d --no-deps app
+ 
+# Step 6: Inject Anomaly 2 — N+1
+# Edit docker-compose.yml: ANOMALY_N_PLUS_ONE: "true"
+docker compose up -d --no-deps app
+ 
+# Step 7: Run load test targeting /orders
+# Grafana: DB queries/second should explode
+# Tempo: order trace should show 50+ DB.User.findUnique spans
+ 
+# This before/after evidence is GOLD for judges

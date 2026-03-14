@@ -1,0 +1,604 @@
+================================================================================
+                    KOMBEE HACKATHON OBSERVABILITY PLATFORM
+                         COMPLETE PROJECT GUIDE
+================================================================================
+
+📋 TABLE OF CONTENTS
+--------------------
+1. Project Overview & Specifications
+2. Prerequisites & Installation
+3. How to Start the Project
+4. Where to Access Everything (URLs & Dashboards)
+5. Video Demonstration Workflow
+6. Anomaly Testing Guide
+7. Troubleshooting
+
+
+================================================================================
+1. PROJECT OVERVIEW & SPECIFICATIONS
+================================================================================
+
+🎯 PROJECT PURPOSE:
+-------------------
+Full-stack e-commerce application with enterprise-grade observability platform
+demonstrating the "Three Pillars of Observability":
+  ✓ Distributed Tracing (OpenTelemetry + Tempo)
+  ✓ Metrics Collection (Prometheus)
+  ✓ Structured Logging (Winston + Loki)
+
+🏗️ ARCHITECTURE:
+-----------------
+Frontend:  React + Vite + TailwindCSS (Port 80)
+Backend:   Node.js + Express + Prisma ORM (Port 3001)
+Database:  PostgreSQL 15 (Port 5432)
+
+Observability Stack:
+  - Prometheus:  Metrics collection & storage (Port 9090)
+  - Loki:        Log aggregation (Port 3100)
+  - Tempo:       Distributed tracing (Port 3200, 4317, 4318)
+  - Grafana:     Unified visualization dashboard (Port 3000)
+
+📦 KEY FEATURES:
+----------------
+✓ Automatic request tracing across all services
+✓ Trace ID correlation in all logs
+✓ Custom business metrics (orders, users, revenue)
+✓ Database query performance monitoring
+✓ 4 pre-configured Grafana dashboards
+✓ Toggleable performance anomalies for demos
+✓ Load testing with k6
+✓ Real-time alerting thresholds
+
+
+================================================================================
+2. PREREQUISITES & INSTALLATION
+================================================================================
+
+REQUIRED SOFTWARE:
+------------------
+1. Docker Desktop (with Docker Compose)
+   Download: https://www.docker.com/products/docker-desktop
+
+2. k6 Load Testing Tool
+   Windows: choco install k6
+   Or download: https://k6.io/docs/get-started/installation/
+
+3. Git (for cloning)
+
+VERIFY INSTALLATION:
+--------------------
+Run these commands to verify:
+  docker --version
+  docker compose version
+  k6 version
+
+
+================================================================================
+3. HOW TO START THE PROJECT
+================================================================================
+
+STEP-BY-STEP STARTUP:
+---------------------
+
+Step 1: Navigate to project directory
+  cd kombee-hackathon-2
+
+Step 2: Start all services with Docker Compose
+  docker compose up -d
+
+  This will start:
+  ✓ PostgreSQL database
+  ✓ Backend API server
+  ✓ Frontend web app
+  ✓ Prometheus
+  ✓ Loki
+  ✓ Tempo
+  ✓ Grafana
+
+Step 3: Wait for services to be healthy (30-60 seconds)
+  docker compose ps
+
+  All services should show "healthy" or "running"
+
+Step 4: Verify backend is ready
+  curl http://localhost:3001/health
+
+  Should return: {"status":"ok"}
+
+Step 5: Generate initial traffic (optional)
+  k6 run load-test/k6-script.js
+
+STOP THE PROJECT:
+-----------------
+  docker compose down
+
+RESTART AFTER CHANGES:
+----------------------
+  docker compose up -d --build
+
+
+================================================================================
+4. WHERE TO ACCESS EVERYTHING
+================================================================================
+
+🌐 APPLICATION URLS:
+--------------------
+
+Frontend Application:
+  URL: http://localhost
+  What you'll see: E-commerce website with products, cart, orders
+  
+Backend API:
+  URL: http://localhost:3001
+  Health Check: http://localhost:3001/health
+  API Endpoints:
+    - POST /api/auth/register
+    - POST /api/auth/login
+    - GET  /api/products
+    - POST /api/orders
+    - GET  /api/orders/:id
+
+Grafana (Main Dashboard Hub):
+  URL: http://localhost:3000
+  Login: No login required (anonymous access enabled)
+  
+Prometheus (Raw Metrics):
+  URL: http://localhost:9090
+  What you'll see: Raw metrics query interface
+  
+Tempo (Traces - via Grafana):
+  Access through Grafana → Explore → Tempo datasource
+  
+Loki (Logs - via Grafana):
+  Access through Grafana → Explore → Loki datasource
+
+
+📊 GRAFANA DASHBOARDS (http://localhost:3000):
+-----------------------------------------------
+
+Dashboard 1: "Application Health"
+  Location: Home → Dashboards → Application Health
+  What you'll see:
+    - Request rate (requests/second)
+    - Response time (P50, P95, P99 percentiles)
+    - Error rate percentage
+    - HTTP status code breakdown
+    - SLA compliance indicators
+  Use for: Overall application performance monitoring
+
+Dashboard 2: "Database Performance"
+  Location: Home → Dashboards → Database Performance
+  What you'll see:
+    - Query execution times
+    - Queries per second
+    - Slow query detection (>100ms)
+    - Connection pool status
+    - Query type breakdown (SELECT, INSERT, UPDATE)
+  Use for: Database optimization and bottleneck detection
+
+Dashboard 3: "Logs Explorer"
+  Location: Home → Explore → Select "Loki" datasource
+  What you'll see:
+    - Searchable application logs
+    - Log levels (info, warn, error)
+    - Trace ID in every log entry
+    - Timestamp and service name
+  Use for: Debugging and log correlation
+  
+  How to search logs:
+    - Click "Explore" in left sidebar
+    - Select "Loki" from datasource dropdown
+    - Use LogQL queries:
+      {service_name="kombee-backend"}
+      {service_name="kombee-backend"} |= "error"
+      {service_name="kombee-backend"} | json | trace_id="abc123"
+
+Dashboard 4: "Traces Explorer"
+  Location: Home → Explore → Select "Tempo" datasource
+  What you'll see:
+    - Distributed request traces
+    - Span timeline visualization
+    - Service-to-service call flow
+    - Individual span durations
+    - Database query spans
+  Use for: Request flow analysis and latency debugging
+  
+  How to find traces:
+    - Click "Explore" in left sidebar
+    - Select "Tempo" from datasource dropdown
+    - Search by:
+      * Service name: kombee-backend
+      * Operation: GET /api/products
+      * Duration: >500ms
+    - Or copy trace ID from logs and paste in search
+
+
+🔍 WHERE TO SEE SPECIFIC THINGS:
+---------------------------------
+
+To see REQUEST METRICS:
+  → Grafana → Application Health Dashboard
+  → Look at "Request Rate" and "Response Time" panels
+
+To see ERRORS:
+  → Grafana → Application Health Dashboard → "Error Rate" panel
+  → Grafana → Explore → Loki → Query: {service_name="kombee-backend"} |= "error"
+
+To see SLOW QUERIES:
+  → Grafana → Database Performance Dashboard → "Slow Queries" panel
+  → Grafana → Explore → Tempo → Filter by duration >500ms
+
+To see LOGS with TRACE IDs:
+  → Grafana → Explore → Loki
+  → Every log entry has "trace_id" field
+  → Copy trace_id → Switch to Tempo → Paste to see full request trace
+
+To see DATABASE PERFORMANCE:
+  → Grafana → Database Performance Dashboard
+  → Check "Query Execution Time" and "Queries/Second"
+
+To see FULL REQUEST FLOW:
+  → Grafana → Explore → Tempo
+  → Find a trace → See: HTTP Request → Express Handler → Database Query
+
+
+================================================================================
+5. VIDEO DEMONSTRATION WORKFLOW
+================================================================================
+
+🎬 PERFECT DEMO SCRIPT (5-7 MINUTES):
+--------------------------------------
+
+PART 1: INTRODUCTION (30 seconds)
+----------------------------------
+Script: "I built a full-stack e-commerce platform with enterprise-grade 
+observability. Let me show you how we can detect, diagnose, and fix 
+performance issues in real-time."
+
+Show: 
+  - Browser at http://localhost (frontend)
+  - Quick tour: products page, cart functionality
+
+
+PART 2: BASELINE METRICS (1 minute)
+------------------------------------
+Script: "First, let's establish our baseline performance."
+
+Actions:
+1. Open Grafana: http://localhost:3000
+2. Navigate to "Application Health" dashboard
+3. Point out current metrics:
+   - P95 response time: ~5-10ms
+   - Error rate: 0%
+   - Request rate: steady
+
+4. Run load test to generate traffic:
+   k6 run load-test/k6-script.js
+
+5. Watch dashboard update in real-time
+   Script: "Notice how our P95 stays under 20ms even under load"
+
+
+PART 3: INJECT ANOMALY #1 - SLOW QUERY (2 minutes)
+---------------------------------------------------
+Script: "Now let's simulate a performance regression - a slow database query."
+
+Actions:
+1. Open docker-compose.yml in editor
+2. Change: ANOMALY_SLOW_QUERY: "false" → "true"
+3. Restart backend:
+   docker compose up -d --no-deps app
+
+4. Run load test again:
+   k6 run load-test/k6-script.js
+
+5. Switch to Grafana → Application Health Dashboard
+   Script: "Watch what happens to our P95 latency..."
+   Point out: P95 spikes to ~512ms (50x increase!)
+
+6. Navigate to Database Performance Dashboard
+   Script: "The database dashboard shows the culprit"
+   Point out: Query execution time spiked
+
+7. Go to Grafana → Explore → Tempo
+   - Search for traces with duration >500ms
+   - Click on a slow trace
+   - Expand the spans
+   Script: "Here's the smoking gun - ProductService.findAll taking 500ms"
+   Point out: The specific span showing the delay
+
+8. Go to Grafana → Explore → Loki
+   - Query: {service_name="kombee-backend"} |= "ProductService"
+   - Find a log entry, copy the trace_id
+   - Switch back to Tempo, paste trace_id
+   Script: "Notice how logs and traces are correlated by trace ID"
+
+
+PART 4: FIX THE ISSUE (30 seconds)
+-----------------------------------
+Script: "Now let's fix it."
+
+Actions:
+1. Change: ANOMALY_SLOW_QUERY: "true" → "false"
+2. Restart: docker compose up -d --no-deps app
+3. Run load test: k6 run load-test/k6-script.js
+4. Show dashboard: P95 back to ~5-10ms
+   Script: "Performance restored!"
+
+
+PART 5: INJECT ANOMALY #2 - N+1 QUERY (2 minutes)
+--------------------------------------------------
+Script: "Let's demonstrate another common issue - the N+1 query problem."
+
+Actions:
+1. Change: ANOMALY_N_PLUS_ONE: "false" → "true"
+2. Restart: docker compose up -d --no-deps app
+
+3. Run load test targeting orders:
+   k6 run load-test/k6-script.js
+
+4. Go to Database Performance Dashboard
+   Script: "Look at the queries per second - it's exploding!"
+   Point out: Massive spike in database queries
+
+5. Go to Grafana → Explore → Tempo
+   - Find an order creation trace
+   - Expand all spans
+   Script: "Here's the problem - 50+ individual User.findUnique queries"
+   Point out: The waterfall of repeated queries
+   Script: "This should be one query with a JOIN, not 50 separate queries"
+
+6. Show the correlation:
+   - Copy trace_id from Tempo
+   - Go to Loki, search by trace_id
+   - Show all the database query logs
+   Script: "Every single query is logged and traceable"
+
+
+PART 6: CONCLUSION (30 seconds)
+--------------------------------
+Script: "This observability platform gives us:
+  - Real-time performance monitoring
+  - Automatic trace correlation across services
+  - Instant root cause analysis
+  - Production-ready alerting
+
+All using industry-standard tools: OpenTelemetry, Prometheus, Loki, Tempo, 
+and Grafana."
+
+Show: Quick pan across all dashboards
+
+
+🎥 VIDEO RECORDING TIPS:
+------------------------
+- Record in 1080p minimum
+- Use screen recording software (OBS, Loom, etc.)
+- Keep browser at 100% zoom
+- Close unnecessary tabs/windows
+- Practice the workflow 2-3 times before recording
+- Speak clearly and at moderate pace
+- Use mouse highlights to draw attention
+- Keep total video under 8 minutes
+
+
+================================================================================
+6. ANOMALY TESTING GUIDE
+================================================================================
+
+🔧 AVAILABLE ANOMALIES:
+-----------------------
+
+Anomaly 1: SLOW QUERY
+  What it does: Adds 500ms delay to product queries
+  How to enable:
+    1. Edit docker-compose.yml
+    2. Set: ANOMALY_SLOW_QUERY: "true"
+    3. Run: docker compose up -d --no-deps app
+  
+  Where to see it:
+    - Application Health Dashboard: P95 latency spikes to ~512ms
+    - Database Performance Dashboard: Query time increases
+    - Tempo traces: ProductService.findAll span shows 500ms duration
+  
+  How to test:
+    k6 run load-test/k6-script.js
+  
+  Expected impact:
+    - P95 latency: 5ms → 512ms
+    - User experience: Slow page loads
+    - Database queries: Normal count, slow execution
+
+
+Anomaly 2: N+1 QUERY PROBLEM
+  What it does: Fetches user data individually instead of batch
+  How to enable:
+    1. Edit docker-compose.yml
+    2. Set: ANOMALY_N_PLUS_ONE: "true"
+    3. Run: docker compose up -d --no-deps app
+  
+  Where to see it:
+    - Database Performance Dashboard: Queries/second explodes
+    - Tempo traces: 50+ User.findUnique spans in single request
+    - Application Health: Increased latency
+  
+  How to test:
+    k6 run load-test/k6-script.js
+  
+  Expected impact:
+    - Database queries: 1 → 50+ per order request
+    - Query count spikes dramatically
+    - Latency increases proportionally
+
+
+Anomaly 3: RANDOM ERRORS
+  What it does: 20% of requests fail with 500 errors
+  How to enable:
+    1. Edit docker-compose.yml
+    2. Set: ANOMALY_RANDOM_ERRORS: "true"
+    3. Run: docker compose up -d --no-deps app
+  
+  Where to see it:
+    - Application Health Dashboard: Error rate jumps to ~20%
+    - Logs Explorer: Error logs with stack traces
+    - Tempo traces: Failed spans marked in red
+  
+  How to test:
+    k6 run load-test/k6-script.js
+  
+  Expected impact:
+    - Error rate: 0% → 20%
+    - HTTP 500 responses
+    - Error logs in Loki
+
+
+🧪 TESTING WORKFLOW:
+--------------------
+
+1. Establish Baseline:
+   - Start with all anomalies disabled (false)
+   - Run load test
+   - Take screenshots of dashboards
+
+2. Enable One Anomaly:
+   - Edit docker-compose.yml
+   - Change one ANOMALY_* to "true"
+   - Restart: docker compose up -d --no-deps app
+
+3. Generate Load:
+   - Run: k6 run load-test/k6-script.js
+   - Wait 30 seconds for metrics to populate
+
+4. Observe Impact:
+   - Check Application Health Dashboard
+   - Check Database Performance Dashboard
+   - Search traces in Tempo
+   - Search logs in Loki
+
+5. Document Evidence:
+   - Screenshot dashboards showing spike
+   - Copy trace IDs showing slow spans
+   - Export log entries showing errors
+
+6. Fix and Verify:
+   - Set anomaly back to "false"
+   - Restart: docker compose up -d --no-deps app
+   - Run load test again
+   - Verify metrics return to baseline
+
+
+================================================================================
+7. TROUBLESHOOTING
+================================================================================
+
+PROBLEM: Services won't start
+SOLUTION:
+  - Check Docker Desktop is running
+  - Run: docker compose down
+  - Run: docker compose up -d
+  - Check logs: docker compose logs app
+
+PROBLEM: Can't access Grafana at localhost:3000
+SOLUTION:
+  - Wait 60 seconds after startup
+  - Check service: docker compose ps grafana
+  - Check logs: docker compose logs grafana
+  - Verify port not in use: netstat -an | findstr 3000
+
+PROBLEM: No data in dashboards
+SOLUTION:
+  - Generate traffic: k6 run load-test/k6-script.js
+  - Check time range in Grafana (top right) - set to "Last 5 minutes"
+  - Verify backend is running: curl http://localhost:3001/health
+  - Check Prometheus targets: http://localhost:9090/targets
+
+PROBLEM: Traces not showing in Tempo
+SOLUTION:
+  - Verify Tempo is running: docker compose ps tempo
+  - Check backend logs: docker compose logs app | findstr "trace"
+  - Generate new traffic: k6 run load-test/k6-script.js
+  - Wait 30 seconds for traces to be ingested
+
+PROBLEM: Logs not showing in Loki
+SOLUTION:
+  - Check Loki is running: docker compose ps loki
+  - Verify backend is sending logs: docker compose logs app
+  - In Grafana Explore, try query: {service_name="kombee-backend"}
+  - Check time range is recent
+
+PROBLEM: k6 load test fails
+SOLUTION:
+  - Verify backend is healthy: curl http://localhost:3001/health
+  - Check k6 is installed: k6 version
+  - Try with fewer VUs: k6 run --vus 5 --duration 30s load-test/k6-script.js
+
+PROBLEM: Anomalies not working
+SOLUTION:
+  - Verify docker-compose.yml has correct value: "true" (with quotes)
+  - Restart backend: docker compose up -d --no-deps app
+  - Wait 10 seconds for restart
+  - Check logs: docker compose logs app | findstr "ANOMALY"
+  - Generate new traffic: k6 run load-test/k6-script.js
+
+PROBLEM: High memory usage
+SOLUTION:
+  - This is normal for observability stack
+  - Minimum 8GB RAM recommended
+  - Stop unused services: docker compose stop frontend
+  - Clear old data: docker compose down -v (WARNING: deletes all data)
+
+PROBLEM: Port already in use
+SOLUTION:
+  - Check what's using the port: netstat -ano | findstr :<PORT>
+  - Stop conflicting service
+  - Or change port in docker-compose.yml
+
+
+================================================================================
+                              QUICK REFERENCE
+================================================================================
+
+START PROJECT:
+  docker compose up -d
+
+STOP PROJECT:
+  docker compose down
+
+RESTART AFTER CHANGES:
+  docker compose up -d --build
+
+RESTART JUST BACKEND:
+  docker compose up -d --no-deps app
+
+RUN LOAD TEST:
+  k6 run load-test/k6-script.js
+
+CHECK SERVICE STATUS:
+  docker compose ps
+
+VIEW LOGS:
+  docker compose logs app
+  docker compose logs -f app  (follow mode)
+
+MAIN URLS:
+  Frontend:   http://localhost
+  Backend:    http://localhost:3001
+  Grafana:    http://localhost:3000
+  Prometheus: http://localhost:9090
+
+ENABLE ANOMALY:
+  1. Edit docker-compose.yml
+  2. Set ANOMALY_*: "true"
+  3. Run: docker compose up -d --no-deps app
+
+DISABLE ANOMALY:
+  1. Edit docker-compose.yml
+  2. Set ANOMALY_*: "false"
+  3. Run: docker compose up -d --no-deps app
+
+
+================================================================================
+                            END OF GUIDE
+================================================================================
+
+For questions or issues, check the troubleshooting section above.
+Good luck with your hackathon demonstration! 🚀

@@ -1,0 +1,6 @@
+@echo off
+echo Running prisma generate...
+call npx prisma generate
+echo Running prisma db push...
+call npx prisma db push --accept-data-loss
+echo Done.
