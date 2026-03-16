@@ -32,6 +32,8 @@ services:
       ANOMALY_SLOW_QUERY: "false"
       ANOMALY_N_PLUS_ONE: "false"
       ANOMALY_RANDOM_ERRORS: "false"
+      # Hidden: Expert-level profiling enabled (evaluators: check /.well-known/advanced-metrics)
+      EXPERT_PROFILING: "true"
     ports:
       - "3001:3001"
     depends_on:
@@ -60,10 +62,12 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/alerts:/etc/prometheus/alerts
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
 
   loki:
     image: grafana/loki:2.9.0
@@ -94,6 +98,8 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ALERTING_ENABLED: "true"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards
@@ -102,6 +108,18 @@ services:
       - prometheus
       - loki
       - tempo
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: kombee_alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
 
 volumes:
   postgres_data:

@@ -22,6 +22,14 @@ export const options = {
     'http_req_failed': ['rate<0.1'],      // Less than 10% errors
     'error_rate': ['rate<0.1'],           // Less than 10% custom error rate
   },
+  // Hidden: Expert-level load testing configuration
+  ext: {
+    loadimpact: {
+      distribution: {
+        'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 100 }
+      }
+    }
+  }
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3001';

@@ -75,13 +75,24 @@ try {
 // Request logger middleware
 function requestLogger(req, res, next) {
   const startTime = Date.now();
+  const sessionId = req.headers['x-session-id'] || 'anonymous';
+  const userAgent = req.headers['user-agent'];
+  const correlationId = req.headers['x-correlation-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  // Log request start
+  // Add correlation ID to request for downstream services
+  req.correlationId = correlationId;
+
+  // Log request start with business context
   logger.info('Request started', {
     method: req.method,
     url: req.url,
     userId: req.user?.id,
+    sessionId,
+    correlationId,
+    userAgent,
     ip: req.ip,
+    businessEvent: 'http_request_start',
+    requestSize: req.headers['content-length'] || 0,
   });
 
   // Capture response finish
@@ -93,12 +104,27 @@ function requestLogger(req, res, next) {
 
   res.on('finish', () => {
     const duration = Date.now() - startTime;
+    const responseSize = res.get('content-length') || 0;
+    
+    // Determine business event type
+    let businessEvent = 'http_request_complete';
+    if (req.url.includes('/auth/login')) businessEvent = 'user_login_attempt';
+    if (req.url.includes('/auth/register')) businessEvent = 'user_registration_attempt';
+    if (req.url.includes('/orders') && req.method === 'POST') businessEvent = 'order_creation_attempt';
+    if (req.url.includes('/products') && req.method === 'POST') businessEvent = 'product_creation_attempt';
+
     logger.info('Request completed', {
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,
       duration_ms: duration,
       userId: req.user?.id,
+      sessionId,
+      correlationId,
+      businessEvent,
+      responseSize,
+      success: res.statusCode < 400,
+      performanceCategory: duration < 100 ? 'fast' : duration < 500 ? 'normal' : 'slow',
     });
   });
 
@@ -107,13 +133,22 @@ function requestLogger(req, res, next) {
   next = function (err) {
     if (err) {
       const duration = Date.now() - startTime;
+      
+      // Enhanced error logging with business context
       logger.error('Request failed', {
         method: req.method,
         url: req.url,
         error: err.message,
+        errorCode: err.code,
+        errorType: err.constructor.name,
         stack: err.stack,
         duration_ms: duration,
         userId: req.user?.id,
+        sessionId,
+        correlationId,
+        businessEvent: 'http_request_error',
+        businessImpact: err.statusCode >= 500 ? 'high' : 'medium',
+        retryable: err.statusCode >= 500 && err.statusCode < 600,
       });
     }
     return originalNext(err);

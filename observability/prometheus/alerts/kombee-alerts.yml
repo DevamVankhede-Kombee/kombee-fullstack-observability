@@ -1,0 +1,84 @@
+groups:
+- name: kombee-sla-alerts
+  rules:
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status_code=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+    for: 1m
+    labels:
+      severity: critical
+      team: backend
+      service: kombee-backend
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate is {{ $value }}% which is above the 5% SLA threshold"
+      runbook_url: "https://wiki.kombee.com/runbooks/high-error-rate"
+
+  - alert: HighLatency
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) * 1000 > 500
+    for: 2m
+    labels:
+      severity: warning
+      team: backend
+      service: kombee-backend
+    annotations:
+      summary: "High P95 latency detected"
+      description: "P95 latency is {{ $value }}ms which exceeds 500ms SLA"
+      runbook_url: "https://wiki.kombee.com/runbooks/high-latency"
+
+  - alert: DatabaseSlowQueries
+    expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) * 1000 > 100
+    for: 1m
+    labels:
+      severity: warning
+      team: database
+      service: kombee-backend
+    annotations:
+      summary: "Slow database queries detected"
+      description: "Database P95 query time is {{ $value }}ms which exceeds 100ms threshold"
+      runbook_url: "https://wiki.kombee.com/runbooks/slow-queries"
+
+  - alert: PerformanceBudgetViolation
+    expr: performance_budget_status == 0
+    for: 30s
+    labels:
+      severity: warning
+      team: performance
+      service: kombee-backend
+    annotations:
+      summary: "Performance budget violation"
+      description: "Performance budget violated for {{ $labels.endpoint }} - {{ $labels.metric_type }}"
+      runbook_url: "https://wiki.kombee.com/runbooks/performance-budget"
+
+  - alert: ServiceDown
+    expr: up{job="kombee-app"} == 0
+    for: 30s
+    labels:
+      severity: critical
+      team: sre
+      service: kombee-backend
+    annotations:
+      summary: "Kombee service is down"
+      description: "Kombee backend service has been down for more than 30 seconds"
+      runbook_url: "https://wiki.kombee.com/runbooks/service-down"
+
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+      team: infrastructure
+    annotations:
+      summary: "High memory usage"
+      description: "Memory usage is {{ $value }}% which is above 85% threshold"
+
+  - alert: AnomalyDetected
+    expr: increase(performance_budget_violations_total[5m]) > 5
+    for: 1m
+    labels:
+      severity: critical
+      team: performance
+      service: kombee-backend
+    annotations:
+      summary: "Performance anomaly detected"
+      description: "Multiple performance budget violations detected - possible system degradation"
+      runbook_url: "https://wiki.kombee.com/runbooks/anomaly-response"
